@@ -1,0 +1,11 @@
+{
+  "$schema": "https://app.kilo.ai/config.json",
+  "provider": {
+    "ollama": {
+      "options": {
+        "baseURL": "http://localhost:11434"
+      }
+    }
+  },
+  "model": "ollama/minimax-m3:cloud"
+}

@@ -15,9 +15,9 @@ import {
 const labels = { select: "Select model", noProviders: "No providers", notSet: "Not set" }
 
 describe("providerSortKey", () => {
-  it("returns 0 for kilo gateway", () => {
-    expect(providerSortKey(KILO_GATEWAY_ID)).toBe(0)
-  })
+  it("returns 0 for ollama (primary local provider)", () => {
+  expect(providerSortKey(KILO_GATEWAY_ID)).toBe(0)  // KILO_GATEWAY_ID is now "ollama"
+})
 
   it("returns correct index for known providers", () => {
     expect(providerSortKey("anthropic")).toBe(1)
@@ -42,9 +42,9 @@ describe("providerSortKey", () => {
   })
 
   it("sorts providers correctly when used with sort", () => {
-    const ids = ["google", "anthropic", "kilo", "openai", "deepseek"]
+    const ids = ["google", "anthropic", "ollama", "openai", "deepseek"]
     const sorted = ids.slice().sort((a, b) => providerSortKey(a) - providerSortKey(b))
-    expect(sorted).toEqual(["kilo", "anthropic", "deepseek", "openai", "google"])
+    expect(sorted).toEqual(["ollama", "anthropic", "deepseek", "openai", "google"])
   })
 })
 
