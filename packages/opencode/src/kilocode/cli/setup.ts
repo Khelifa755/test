@@ -14,6 +14,7 @@ import { KiloConsoleCommand } from "@/kilocode/cli/cmd/console"
 import { RollCallCommand } from "@/kilocode/cli/cmd/roll-call"
 import { ProfileCommand } from "@/kilocode/cli/cmd/profile"
 import { DaemonCommand } from "@/kilocode/cli/cmd/daemon"
+import { FontsCommand } from "@/kilocode/cli/cmd/fonts" // kilocode_change
 import { DevSetupCommand, DevAliasCommand } from "@/kilocode/cli/dev-setup"
 import { RemoteCommand } from "@/cli/cmd/remote"
 import { ConfigCommand as ConfigCLICommand } from "@/cli/cmd/config"
@@ -34,6 +35,7 @@ export namespace KiloCli {
       .command(RemoteCommand)
       .command(DaemonCommand)
       .command(ConfigCLICommand)
+      .command(FontsCommand) // kilocode_change
     if (InstallationBuildKind !== "release") cli.command(DevSetupCommand).command(DevAliasCommand)
     // Safe self-reference: `cli` is a typed parameter and yargs `.command()` returns the same
     // instance, so the help command can resolve the fully-built root at handler time. This also
