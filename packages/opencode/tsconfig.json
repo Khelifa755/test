@@ -13,5 +13,6 @@
       "@tui/*": ["./src/cli/cmd/tui/*"],
       "@test/*": ["./test/*"]
     }
-  }
+  },
+  "exclude": ["node_modules", "vps"]
 }
