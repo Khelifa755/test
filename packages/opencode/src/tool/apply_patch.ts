@@ -15,6 +15,7 @@ import { File } from "../file"
 import { filterDiagnostics } from "./diagnostics" // kilocode_change
 import { ConfigValidation } from "../kilocode/config-validation" // kilocode_change
 import * as EncodedIO from "../kilocode/tool/encoded-io" // kilocode_change
+import { UndoManager } from "../kilocode/tool/undo-state" // kilocode_change
 import { Format } from "../format"
 import * as Bom from "@/util/bom"
 
@@ -242,6 +243,7 @@ export const ApplyPatchTool = Tool.define(
       const updates: Array<{ file: string; event: "add" | "change" | "unlink" }> = []
 
       for (const change of fileChanges) {
+        yield* UndoManager.record(change.filePath, change.oldContent, ctx.sessionID) // kilocode_change - record undo
         const edited = change.type === "delete" ? undefined : (change.movePath ?? change.filePath)
         switch (change.type) {
           case "add":

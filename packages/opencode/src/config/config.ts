@@ -605,7 +605,25 @@ export const layer = Layer.effect(
         const file = globalConfigFile()
         if (!existsSync(file)) {
           yield* fs
-            .writeWithDirs(file, JSON.stringify({ $schema: "https://app.kilo.ai/config.json" }, null, 2))
+            .writeWithDirs(
+              file,
+              JSON.stringify(
+                {
+                  $schema: "https://app.kilo.ai/config.json",
+                  model: "ollama/minimax-m3:cloud",
+                  small_model: "ollama/gemma4:31b-cloud",
+                  provider: {
+                    ollama: {
+                      options: {
+                        baseURL: os.platform() === "win32" ? "http://127.0.0.1:11434/v1" : "http://localhost:11434/v1",
+                      },
+                    },
+                  },
+                },
+                null,
+                2,
+              ),
+            )
             .pipe(Effect.catch(() => Effect.void))
         }
       }

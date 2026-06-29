@@ -13,6 +13,7 @@ import { optionalOmitUndefined } from "@opencode-ai/core/schema"
 import { Effect, Schema } from "effect"
 import type { LanguageModelV3 } from "@ai-sdk/provider"
 import { mapValues, omit, pickBy } from "remeda"
+import * as os from "os" // kilocode_change
 
 /** Default timeout (ms) for provider HTTP requests (connection phase). */
 export const REQUEST_TIMEOUT_MS = 300_000 // 5 minutes
@@ -177,6 +178,21 @@ export function kiloCustomLoaders(dep: CustomDep): Record<string, CustomLoader> 
         autoload: false,
         options: { headers: DEFAULT_HEADERS },
       }),
+
+    // Override ollama for cross-platform localhost detection
+    ollama: Effect.fnUntraced(function* (input: any) {
+      const config = yield* dep.config()
+      
+      let baseURL = config.provider?.["ollama"]?.options?.baseURL
+      if (!baseURL) {
+        baseURL = os.platform() === "win32" ? "http://127.0.0.1:11434/v1" : "http://localhost:11434/v1"
+      }
+      
+      return {
+        autoload: true,
+        options: { baseURL },
+      }
+    }),
   }
 }
 

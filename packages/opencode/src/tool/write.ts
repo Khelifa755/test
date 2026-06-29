@@ -16,6 +16,7 @@ import { assertExternalDirectoryEffect } from "./external-directory"
 import { filterDiagnostics } from "./diagnostics" // kilocode_change
 import { ConfigValidation } from "../kilocode/config-validation" // kilocode_change
 import * as EncodedIO from "../kilocode/tool/encoded-io" // kilocode_change
+import { UndoManager } from "../kilocode/tool/undo-state" // kilocode_change
 import * as Bom from "@/util/bom"
 
 const MAX_PROJECT_DIAGNOSTICS_FILES = 5
@@ -59,6 +60,9 @@ export const WriteTool = Tool.define(
 
           const diff = trimDiff(createTwoFilesPatch(filepath, filepath, contentOld, contentNew))
           const filediff = buildFileDiff(filepath, contentOld, contentNew) // kilocode_change
+          
+          yield* UndoManager.record(filepath, contentOld, ctx.sessionID) // kilocode_change - record undo
+          
           yield* ctx.ask({
             permission: "edit",
             patterns: [path.relative(instance.worktree, filepath)],

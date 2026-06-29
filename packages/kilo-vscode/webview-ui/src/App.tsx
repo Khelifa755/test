@@ -285,6 +285,15 @@ const AppContent: Component = () => {
     }
     window.addEventListener("message", handler)
     onCleanup(() => window.removeEventListener("message", handler))
+
+    const onUndoFile = (e: Event) => {
+      const detail = (e as CustomEvent).detail
+      if (detail && detail.filePath) {
+        vscode.postMessage({ type: "undoFile", filePath: detail.filePath })
+      }
+    }
+    document.addEventListener("kilo-undo-file", onUndoFile)
+    onCleanup(() => document.removeEventListener("kilo-undo-file", onUndoFile))
   })
 
   const handleSelectSession = (id: string) => {

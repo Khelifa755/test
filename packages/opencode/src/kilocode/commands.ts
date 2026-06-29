@@ -25,6 +25,7 @@ import { RemoteCommand } from "../cli/cmd/remote"
 import { DbCommand } from "../cli/cmd/db"
 import { ConfigCommand as ConfigCLICommand } from "../cli/cmd/config"
 import { PluginCommand } from "../cli/cmd/plug"
+import { UndoCommand } from "../cli/cmd/undo" // kilocode_change
 import { DevSetupCommand, DevAliasCommand } from "./cli/dev-setup"
 import { RollCallCommand } from "./cli/cmd/roll-call"
 import { ProfileCommand } from "./cli/cmd/profile"
@@ -75,6 +76,7 @@ export const commands = [
   KiloConsoleCommand,
   DbCommand,
   ConfigCLICommand,
+  UndoCommand, // kilocode_change
   ...dev,
   PluginCommand,
   HelpCommand,

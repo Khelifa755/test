@@ -21,6 +21,7 @@ import * as Bom from "@/util/bom"
 import { filterDiagnostics } from "./diagnostics" // kilocode_change
 import { ConfigValidation } from "../kilocode/config-validation" // kilocode_change
 import * as EncodedIO from "../kilocode/tool/encoded-io" // kilocode_change
+import { UndoManager } from "../kilocode/tool/undo-state" // kilocode_change
 
 const MAX_DIFF_CONTENT = 500_000 // kilocode_change
 
@@ -126,6 +127,9 @@ export const EditTool = Tool.define(
                 contentNew = next.text
                 diff = trimDiff(createTwoFilesPatch(filePath, filePath, contentOld, contentNew))
                 cachedFilediff = buildFileDiff(filePath, contentOld, contentNew) // kilocode_change
+                
+                yield* UndoManager.record(filePath, contentOld, ctx.sessionID) // kilocode_change - record undo
+                
                 yield* ctx.ask({
                   permission: "edit",
                   patterns: [path.relative(instance.worktree, filePath)],
@@ -175,6 +179,9 @@ export const EditTool = Tool.define(
                 ),
               )
               cachedFilediff = buildFileDiff(filePath, contentOld, contentNew) // kilocode_change
+              
+              yield* UndoManager.record(filePath, contentOld, ctx.sessionID) // kilocode_change - record undo
+              
               yield* ctx.ask({
                 permission: "edit",
                 patterns: [path.relative(instance.worktree, filePath)],

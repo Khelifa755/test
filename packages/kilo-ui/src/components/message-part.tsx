@@ -2313,6 +2313,14 @@ ToolRegistry.register({
       openDiff()
     }
 
+    const handleUndoClick = (e: MouseEvent) => {
+      e.stopPropagation()
+      e.preventDefault()
+      if (props.input.filePath) {
+        document.dispatchEvent(new CustomEvent("kilo-undo-file", { detail: { filePath: props.input.filePath } }))
+      }
+    }
+
     return (
       <div data-component="edit-tool">
         <BasicTool
@@ -2342,6 +2350,18 @@ ToolRegistry.register({
               </div>
               <Show when={canOpenDiff()}>
                 <span data-slot="tool-trigger-actions">
+                  <Show when={!pending()}>
+                    <Tooltip value="Undo" placement="top" gutter={4}>
+                      <IconButton
+                        icon="undo"
+                        size="small"
+                        variant="ghost"
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={handleUndoClick}
+                        aria-label="Undo"
+                      />
+                    </Tooltip>
+                  </Show>
                   <Tooltip value={i18n.t("ui.messagePart.openInDiffViewer")} placement="top" gutter={4}>
                     <IconButton
                       icon="square-arrow-top-right"
@@ -2428,6 +2448,14 @@ ToolRegistry.register({
       openDiff()
     }
 
+    const handleUndoClick = (e: MouseEvent) => {
+      e.stopPropagation()
+      e.preventDefault()
+      if (props.input.filePath) {
+        document.dispatchEvent(new CustomEvent("kilo-undo-file", { detail: { filePath: props.input.filePath } }))
+      }
+    }
+
     return (
       <div data-component="write-tool">
         <BasicTool
@@ -2457,6 +2485,18 @@ ToolRegistry.register({
               </div>
               <Show when={canOpenDiff()}>
                 <span data-slot="tool-trigger-actions">
+                  <Show when={!pending()}>
+                    <Tooltip value="Undo" placement="top" gutter={4}>
+                      <IconButton
+                        icon="undo"
+                        size="small"
+                        variant="ghost"
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={handleUndoClick}
+                        aria-label="Undo"
+                      />
+                    </Tooltip>
+                  </Show>
                   <Tooltip value={i18n.t("ui.messagePart.openInDiffViewer")} placement="top" gutter={4}>
                     <IconButton
                       icon="square-arrow-top-right"

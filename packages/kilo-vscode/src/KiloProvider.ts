@@ -1,4 +1,6 @@
 import * as path from "path"
+import * as os from "os"
+import * as fs from "fs/promises"
 import * as vscode from "vscode"
 import type {
   KiloClient,
@@ -939,6 +941,9 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
           this.contextSessionID = undefined
           this.setCurrentSession(null)
           this.focusSession()
+          break
+        case "undoFile":
+          await this.handleUndoFile(message.filePath)
           break
         case "loadMessages":
           // Don't await: allow parallel loads so rapid session switching
@@ -2909,6 +2914,39 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
         files,
         review,
       })
+    }
+  }
+
+  private async handleUndoFile(filePath: string) {
+    try {
+      const historyFile = path.join(os.tmpdir(), "kilo_undo", "files", encodeURIComponent(filePath), "history.json")
+      let history: any[] = []
+      try {
+        const text = await fs.readFile(historyFile, "utf-8")
+        history = JSON.parse(text)
+      } catch {}
+      if (history.length === 0) {
+        vscode.window.showWarningMessage(`No undo history found for ${path.basename(filePath)}`)
+        return
+      }
+      const lastEdit = history.pop()
+      await fs.writeFile(historyFile, JSON.stringify(history, null, 2))
+      
+      try {
+        const globalLogFile = path.join(os.tmpdir(), "kilo_undo", "global_log.json")
+        const globalText = await fs.readFile(globalLogFile, "utf-8")
+        const globalLog: any[] = JSON.parse(globalText)
+        if (globalLog.length > 0 && globalLog[globalLog.length - 1].filePath === filePath) {
+          globalLog.pop()
+          await fs.writeFile(globalLogFile, JSON.stringify(globalLog, null, 2))
+        }
+      } catch {}
+
+      const uri = vscode.Uri.file(lastEdit.filePath)
+      await vscode.workspace.fs.writeFile(uri, Buffer.from(lastEdit.content, 'utf8'))
+      vscode.window.showInformationMessage(`Undid last edit to ${path.basename(filePath)}`)
+    } catch (err) {
+      vscode.window.showErrorMessage(`Failed to undo: ${err}`)
     }
   }
 

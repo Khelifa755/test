@@ -136,6 +136,11 @@ export interface OpenFileRequest {
   column?: number
 }
 
+export interface UndoFileRequest {
+  type: "undoFile"
+  filePath: string
+}
+
 export interface OpenContentRequest {
   type: "openContent"
   content: string
@@ -1137,6 +1142,7 @@ export type WebviewMessage =
   | OpenAgentManagerRequest
   | OpenAdvancedWorktreeRequest
   | OpenFileRequest
+  | UndoFileRequest
   | CancelLoginRequest
   | SetOrganizationRequest
   | WebviewReadyRequest
