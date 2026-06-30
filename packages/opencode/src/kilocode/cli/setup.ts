@@ -18,6 +18,17 @@ import { FontsCommand } from "@/kilocode/cli/cmd/fonts" // kilocode_change
 import { DevSetupCommand, DevAliasCommand } from "@/kilocode/cli/dev-setup"
 import { RemoteCommand } from "@/cli/cmd/remote"
 import { ConfigCommand as ConfigCLICommand } from "@/cli/cmd/config"
+// kilocode_change start - VPS subscription enforcement
+import {
+  LoginCommand,
+  LogoutCommand,
+  callHeartbeat,
+  denialMessage,
+  deviceId,
+  isWhitelisted,
+  loadVpsStore,
+} from "@/kilocode/cli/cmd/vps"
+// kilocode_change end
 
 const log = Log.create({ service: "kilocode.cli" })
 
@@ -25,6 +36,11 @@ const log = Log.create({ service: "kilocode.cli" })
 // (src/index.ts) only needs a handful of thin call-sites behind kilocode_change markers.
 // This keeps index.ts close to upstream and reduces merge conflicts on every sync.
 export namespace KiloCli {
+  // kilocode_change start - exposed for src/index.ts to register the login/logout commands
+  export const VpsLoginCommand = LoginCommand
+  export const VpsLogoutCommand = LogoutCommand
+  // kilocode_change end
+
   // Register only the Kilo-specific commands. Upstream commands stay in index.ts's chain so
   // upstream merges that add or remove commands keep working without touching this file.
   export function register<T>(cli: Argv<T>): Argv<T> {
@@ -43,6 +59,46 @@ export namespace KiloCli {
     cli.command(createHelpCommand(() => cli))
     return cli
   }
+
+  // kilocode_change start - VPS subscription heartbeat. Reads the stored access_token, calls
+  // /v1/heartbeat, handles 401 -> refresh -> retry, fail-open on network errors, and
+  // process.exit(2) on quota/suspension. Whitelisted commands and --no-vps are skipped.
+  export async function vpsEnforce(input: {
+    argv: string[]
+    opts: Record<string, unknown>
+    skipped: boolean
+  }): Promise<void> {
+    if (input.skipped) return
+    if (isWhitelisted(input.argv)) return
+
+    const url = process.env.KILO_VPS_URL ?? "http://192.168.253.153:8787" // prod swap: set KILO_VPS_URL to https://vps.<your-domain>
+    const store = await loadVpsStore()
+    if (!store) {
+      process.stderr.write("Please run `kilo login` first.\n")
+      process.exit(1)
+    }
+
+    const { id: device_id } = await deviceId()
+    const command = input.argv.slice(2).find((a) => !a.startsWith("-")) ?? "unknown"
+    const result = await callHeartbeat({
+      url,
+      token: store.access_token,
+      device_id,
+      command,
+      ts: Date.now(),
+    })
+
+    if (result.kind === "denied") {
+      process.stderr.write(denialMessage(result.reason) + "\n")
+      process.exit(2)
+    }
+    if (result.kind === "offline") {
+      process.stderr.write("⚠ offline, running without verification\n")
+      return
+    }
+    // result.kind === "allowed" — no output, just continue
+  }
+  // kilocode_change end
 
   // Runs from the upstream `.middleware`, before any command handler. Env tagging is additive so
   // it never has to modify upstream's own env assignments.

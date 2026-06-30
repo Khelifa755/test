@@ -27,6 +27,11 @@ const logoutSchema = z.object({
   refresh_token: z.string().min(1),
 })
 
+const registerDeviceSchema = z.object({
+  device_id: z.string().min(1).max(128),
+  device_label: z.string().max(128).optional(),
+})
+
 const hashToken = (token: string) =>
   createHash("sha256").update(token).digest("hex")
 
@@ -158,4 +163,34 @@ auth.post("/logout", requireAuth(), async (c) => {
   return c.json({ message: "logged out" })
 })
 
-export const __test = { hashToken, refreshSchema, loginSchema, signupSchema, logoutSchema }
+// kilocode_change start - register a new device for the authenticated user. Used by the CLI
+// when its hardware-fingerprint-derived device_id has never been seen by the server (e.g. first
+// run after a machine migration, or after the user upgraded the CLI). Re-issues a JWT bound to
+// the new device_id so subsequent heartbeats succeed. Caps are enforced by the heartbeat tier
+// logic; this endpoint just adds a row, it does not count against a limit.
+auth.post("/register-device", requireAuth(), async (c) => {
+  const user = c.var.user
+  const body = await c.req.json().catch(() => null)
+  const parsed = registerDeviceSchema.safeParse(body)
+  if (!parsed.success) {
+    return c.json({ error: "invalid payload", details: parsed.error.flatten() }, 400)
+  }
+  const { device_id, device_label } = parsed.data
+  await sql`
+    INSERT INTO devices (user_id, device_id, label, last_seen)
+    VALUES (${user.sub}, ${device_id}, ${device_label ?? null}, now())
+    ON CONFLICT (user_id, device_id) DO UPDATE
+      SET last_seen = now(),
+          label = COALESCE(EXCLUDED.label, devices.label),
+          revoked = false
+  `
+  const access_token = signAccessToken({
+    sub: user.sub,
+    tier: user.tier,
+    device_id,
+  })
+  return c.json({ access_token, device_id })
+})
+// kilocode_change end
+
+export const __test = { hashToken, refreshSchema, loginSchema, signupSchema, logoutSchema, registerDeviceSchema }

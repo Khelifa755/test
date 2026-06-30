@@ -89,6 +89,11 @@ let cli = yargs(args) // kilocode_change
     describe: "run without external plugins",
     type: "boolean",
   })
+  .option("no-vps", {
+    // kilocode_change - hidden escape hatch for the subscription heartbeat middleware
+    type: "boolean",
+    hidden: true,
+  })
   .middleware(async (opts) => {
     if (opts.pure) {
       process.env.KILO_PURE = "1"
@@ -118,6 +123,9 @@ let cli = yargs(args) // kilocode_change
     })
 
     await KiloCli.bootstrap() // kilocode_change - env tagging, telemetry init, legacy auth migration
+    // kilocode_change start - VPS subscription heartbeat (whitelisted commands skip; --no-vps skips entirely)
+    await KiloCli.vpsEnforce({ argv: process.argv, opts, skipped: opts["no-vps"] === true })
+    // kilocode_change end
 
     const marker = path.join(Global.Path.data, "kilo.db")
     if (!(await Filesystem.exists(marker))) {
@@ -184,6 +192,8 @@ let cli = yargs(args) // kilocode_change
 
 // kilocode_change start - register Kilo-specific commands after the upstream chain
 cli = KiloCli.register(cli)
+  .command(KiloCli.VpsLoginCommand)  // kilocode_change - VPS login/logout (see src/kilocode/cli/cmd/vps.ts)
+  .command(KiloCli.VpsLogoutCommand) // kilocode_change
 cli = cli
   // kilocode_change end
   .fail((msg, err) => {
