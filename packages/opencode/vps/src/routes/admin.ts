@@ -53,23 +53,30 @@ ${error ? '<div class="err">invalid credentials</div>' : ""}
 </form></body></html>`
 
 const dashboardHtml = async () => {
-  const users = await sql`
-    SELECT u.id, u.email, u.tier, u.grace_until,
-      COALESCE(ud.count, 0) AS today_count,
-      (SELECT MAX(d.last_seen) FROM devices d WHERE d.user_id = u.id) AS last_device_seen
-    FROM users u
-    LEFT JOIN usage_daily ud
-      ON ud.user_id = u.id AND ud.date = CURRENT_DATE
-    ORDER BY u.created_at DESC
-  `
-  const rows = (users as unknown as Array<{
+  let users: Array<{
     id: string
     email: string
     tier: "free" | "paid"
     grace_until: Date | null
     today_count: number | null
     last_device_seen: Date | null
-  }>)
+  }> = []
+  let dashboardError: string | null = null
+  try {
+    const rows = await sql`
+      SELECT u.id, u.email, u.tier, u.grace_until,
+        COALESCE(ud.count, 0) AS today_count,
+        (SELECT MAX(d.last_seen) FROM devices d WHERE d.user_id = u.id) AS last_device_seen
+      FROM users u
+      LEFT JOIN usage_daily ud
+        ON ud.user_id = u.id AND ud.date = CURRENT_DATE
+      ORDER BY u.created_at DESC
+    `
+    users = rows as unknown as typeof users
+  } catch (cause) {
+    dashboardError = cause instanceof Error ? cause.message : String(cause)
+  }
+  const rows = users
     .map(
       (u) => `<tr>
 <td><code>${escape(u.email)}</code></td>
@@ -115,6 +122,7 @@ form.danger button{background:#ff6467}
 <button type="submit" class="logout">logout</button>
 </form>
 </header>
+${dashboardError ? `<pre style="background:#3a1515;color:#ff6467;padding:12px;border-radius:6px;font-size:12px;overflow:auto;margin-bottom:16px">${escape(dashboardError)}</pre>` : ""}
 <small>${escape(users.length)} users</small>
 <table>
 <thead><tr>
