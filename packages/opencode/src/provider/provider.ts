@@ -1544,6 +1544,24 @@ export const layer = Layer.effect(
           })
         }
 
+        // kilocode_change start - discover locally pulled Ollama models via /api/tags
+        const ollama = ProviderID.make("ollama")
+        if (discoveryLoaders[ollama] && providers[ollama] && isProviderAllowed(ollama)) {
+          yield* Effect.promise(async () => {
+            try {
+              const discovered = await discoveryLoaders[ollama]()
+              for (const [modelID, model] of Object.entries(discovered)) {
+                if (!providers[ollama].models[modelID]) {
+                  providers[ollama].models[modelID] = model
+                }
+              }
+            } catch (e) {
+              log.warn("state discovery error", { id: "ollama", error: e })
+            }
+          })
+        }
+        // kilocode_change end
+
         for (const [id, provider] of Object.entries(providers)) {
           const providerID = ProviderID.make(id)
           if (!isProviderAllowed(providerID)) {

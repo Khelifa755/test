@@ -2,7 +2,7 @@
 // kilocode_change - new file
 
 /**
- * Forces the local kilo CLI to use Ollama Cloud as its default provider.
+ * Forces the local kilo CLI to use Ollama as its default provider.
  *
  * Background: this is a Kilo fork. The CLI auto-loads the bundled Kilo
  * Gateway provider and a `~/.local/share/kilo/config.json` and
@@ -16,28 +16,14 @@
  * provider is enabled. It is safe to re-run — values are overwritten,
  * not merged, and the change is idempotent.
  *
- * Runs from `postinstall`.
+ * Runs from `postinstall` and `bun run dev`.
  */
 
 import { $ } from "bun"
 import * as fs from "node:fs/promises"
 import * as os from "node:os"
 import * as path from "node:path"
-
-const SHARED = {
-  $schema: "https://app.kilo.ai/config.json",
-  model: "ollama/minimax-m3:cloud",
-  small_model: "ollama/gemma4:31b-cloud",
-  enabled_providers: ["ollama"],
-  disabled_providers: ["kilo"],
-  provider: {
-    ollama: {
-      options: {
-        baseURL: "http://127.0.0.1:11434/v1",
-      },
-    },
-  },
-}
+import { OLLAMA_DEFAULT_CONFIG } from "../packages/opencode/src/kilocode/ollama-defaults.ts"
 
 async function writeIfWritable(file: string, body: string) {
   try {
@@ -62,11 +48,10 @@ const configDir =
     ? process.env["APPDATA"] ?? path.join(home, "AppData", "Roaming")
     : process.env["XDG_CONFIG_HOME"] ?? path.join(home, ".config")
 
-await writeIfWritable(path.join(localShare, "kilo", "config.json"), JSON.stringify(SHARED, null, 2) + "\n")
-await writeIfWritable(
-  path.join(configDir, "kilo", "kilo.jsonc"),
-  JSON.stringify(SHARED, null, 2) + "\n",
-)
+const body = JSON.stringify(OLLAMA_DEFAULT_CONFIG, null, 2) + "\n"
+
+await writeIfWritable(path.join(localShare, "kilo", "config.json"), body)
+await writeIfWritable(path.join(configDir, "kilo", "kilo.jsonc"), body)
 
 // Verify ollama is reachable so the user gets a clear failure if not.
 const reach = await $`curl -fsS --max-time 2 http://127.0.0.1:11434/api/tags`.nothrow().quiet()

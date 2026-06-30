@@ -14,6 +14,7 @@ import { Effect, Schema } from "effect"
 import type { LanguageModelV3 } from "@ai-sdk/provider"
 import { mapValues, omit, pickBy } from "remeda"
 import * as os from "os" // kilocode_change
+import { discoverOllamaModels, ollamaBaseURL } from "@/kilocode/provider/ollama" // kilocode_change
 
 /** Default timeout (ms) for provider HTTP requests (connection phase). */
 export const REQUEST_TIMEOUT_MS = 300_000 // 5 minutes
@@ -179,18 +180,20 @@ export function kiloCustomLoaders(dep: CustomDep): Record<string, CustomLoader> 
         options: { headers: DEFAULT_HEADERS },
       }),
 
-    // Override ollama for cross-platform localhost detection
-    ollama: Effect.fnUntraced(function* (input: any) {
+    // Override ollama for cross-platform localhost detection + local model discovery
+    ollama: Effect.fnUntraced(function* () {
       const config = yield* dep.config()
-      
-      let baseURL = config.provider?.["ollama"]?.options?.baseURL
-      if (!baseURL) {
-        baseURL = os.platform() === "win32" ? "http://127.0.0.1:11434/v1" : "http://localhost:11434/v1"
-      }
-      
+      const baseURL = ollamaBaseURL(config.provider?.["ollama"]?.options?.baseURL, os.platform())
+      const fallback = [config.model, config.small_model]
+        .flatMap((raw) => {
+          if (!raw?.startsWith("ollama/")) return []
+          return [raw.slice("ollama/".length)]
+        })
+
       return {
         autoload: true,
         options: { baseURL },
+        discoverModels: () => discoverOllamaModels(baseURL, fallback),
       }
     }),
   }

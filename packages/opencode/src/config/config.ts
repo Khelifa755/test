@@ -11,6 +11,7 @@ import { Flag } from "@opencode-ai/core/flag/flag"
 import { Auth } from "../auth"
 import { Env } from "../env"
 import { applyEdits, findNodeAtLocation, modify, parseTree } from "jsonc-parser" // kilocode_change - parseTree/findNodeAtLocation used in patchJsonc
+import { OLLAMA_DEFAULT_CONFIG } from "@/kilocode/ollama-defaults" // kilocode_change
 import { InstallationLocal, InstallationVersion } from "@opencode-ai/core/installation/version"
 import { existsSync } from "fs"
 // kilocode_change start
@@ -609,13 +610,14 @@ export const layer = Layer.effect(
               file,
               JSON.stringify(
                 {
-                  $schema: "https://app.kilo.ai/config.json",
-                  model: "ollama/minimax-m3:cloud",
-                  small_model: "ollama/gemma4:31b-cloud",
+                  ...OLLAMA_DEFAULT_CONFIG,
                   provider: {
                     ollama: {
                       options: {
-                        baseURL: os.platform() === "win32" ? "http://127.0.0.1:11434/v1" : "http://localhost:11434/v1",
+                        baseURL:
+                          os.platform() === "win32"
+                            ? "http://127.0.0.1:11434/v1"
+                            : "http://localhost:11434/v1",
                       },
                     },
                   },

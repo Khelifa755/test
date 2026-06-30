@@ -3,17 +3,17 @@
   // "enterprise": {
   //   "url": "https://enterprise.dev.opencode.ai",
   // },
+  "model": "ollama/minimax-m3:cloud",
+  "small_model": "ollama/gemma4:31b-cloud",
+  "enabled_providers": ["ollama"],
+  "disabled_providers": ["kilo"],
   "provider": {
-    "kilo": {
-      "options": {}
-    },
     "ollama": {
       "options": {
-        "baseURL": "http://localhost:11434"
+        "baseURL": "http://127.0.0.1:11434/v1"
       }
     }
   },
-  "model": "ollama/minimax-m3:cloud",
   "permission": {
     "edit": {
       "packages/opencode/migration/*": "deny"
@@ -23,6 +23,5 @@
   "tools": {
     "github-triage": false,
     "github-pr-search": false
-  },
-  "disabled_providers": []
+  }
 }

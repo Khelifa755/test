@@ -1,11 +1,14 @@
 {
   "$schema": "https://app.kilo.ai/config.json",
+  "model": "ollama/minimax-m3:cloud",
+  "small_model": "ollama/gemma4:31b-cloud",
+  "enabled_providers": ["ollama"],
+  "disabled_providers": ["kilo"],
   "provider": {
     "ollama": {
       "options": {
-        "baseURL": "http://localhost:11434"
+        "baseURL": "http://127.0.0.1:11434/v1"
       }
     }
-  },
-  "model": "ollama/minimax-m3:cloud"
+  }
 }
