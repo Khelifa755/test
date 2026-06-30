@@ -19,4 +19,13 @@ import { $ } from "bun"
 const inside = await $`git rev-parse --is-inside-work-tree`.nothrow().quiet()
 if (inside.exitCode !== 0) process.exit(0)
 
-await $`git config --local merge.conflictStyle zdiff3`.quiet()
+// `zdiff3` requires Git 2.35+ (released Jan 2022). Older Git refuses the
+// value on every command and breaks `git switch`, `git checkout`, etc.
+// Probe first, fall back to the default `merge` style on legacy installs.
+const ver = (await $`git --version`.quiet().text()).trim()
+const m = ver.match(/(\d+)\.(\d+)/)
+const major = m ? Number(m[1]) : 0
+const minor = m ? Number(m[2]) : 0
+if (major > 2 || (major === 2 && minor >= 35)) {
+  await $`git config --local merge.conflictStyle zdiff3`.quiet()
+}
