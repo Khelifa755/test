@@ -2,6 +2,8 @@
   "$schema": "https://app.kilo.ai/config.json",
   "model": "ollama/minimax-m3:cloud",
   "small_model": "ollama/gemma4:31b-cloud",
+  "enabled_providers": ["ollama"],
+  "disabled_providers": ["kilo"],
   "provider": {
     "ollama": {
       "options": {
